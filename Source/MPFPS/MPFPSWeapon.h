@@ -16,9 +16,11 @@ struct FWeaponConfig
 	UPROPERTY(EditDefaultsOnly, Category = Ammo)
 	uint32	ClipSize;
 
-	// Cooldown between shoots in secons
 	UPROPERTY(EditDefaultsOnly, Category = Config)
 	float	Cooldown;
+
+	UPROPERTY(EditDefaultsOnly, Category = Config)
+	float	ReloadingTime;
 
 	UPROPERTY(EditDefaultsOnly, Category = Config)
 	float	ShootingRange;
@@ -101,6 +103,9 @@ public:
 
 	UPROPERTY(Replicated)
 	float			Cooldown;
+
+	UPROPERTY(Replicated)
+	float			Reloading;
 
 protected:
 	void InstantShoot(const FVector& ShootStartLocation, const FVector& ShootDirection);

@@ -49,7 +49,10 @@ AMPFPSLocalPlayer::AMPFPSLocalPlayer(const FObjectInitializer& ObjectInitializer
 void AMPFPSLocalPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+}
 
+void AMPFPSLocalPlayer::SetPlayerDefaults()
+{
 	Health = 100;
 
 	FActorSpawnParameters SpawnParams;
@@ -61,7 +64,7 @@ void AMPFPSLocalPlayer::BeginPlay()
 	{
 		Inventory.MainWeapon->WeaponMesh->SetCastShadow(true);
 		Inventory.MainWeapon->WeaponMesh->SetOnlyOwnerSee(false);
-		
+
 	}
 	if (Inventory.SecondaryWeapon)
 	{
@@ -76,12 +79,13 @@ void AMPFPSLocalPlayer::BeginPlay()
 void AMPFPSLocalPlayer::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
+	//TODO: Must be more elegant way
 	if (Health <= 0)
 	{
 		if (InputEnabled())
 		{
 			DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-			RespawnTimer = 5.f;
+			RespawnTimer = 3.f;
 		}
 		else
 		{
@@ -90,7 +94,6 @@ void AMPFPSLocalPlayer::Tick( float DeltaTime )
 				RespawnTimer -= DeltaTime;
 				if (RespawnTimer <= 0.f)
 				{
-					GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("RESPAAAAWN!!"));
 					GetWorld()->GetAuthGameMode()->RestartPlayer(GetController());
 				}
 			}
@@ -99,6 +102,8 @@ void AMPFPSLocalPlayer::Tick( float DeltaTime )
 	}
 	else
 	{
+		if (!InputEnabled())
+			EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 		// TODO: Some dragging can be noted on client. What's a deal  with Client Prediction in UE4?
 		SetPitch(FMath::ClampAngle(FMath::RInterpTo(FRotator(CameraPitch, 0, 0), GetControlRotation(), DeltaTime, 15).Pitch, -90, 90));
 	}
@@ -120,11 +125,14 @@ void AMPFPSLocalPlayer::SetupPlayerInputComponent(class UInputComponent* _InputC
 	_InputComponent->BindAction("PrevWeapon", IE_Pressed, this, &AMPFPSLocalPlayer::SwitchWeapon);
 	_InputComponent->BindAction("Crouch", IE_Pressed, this, &AMPFPSLocalPlayer::StartCrouch);
 	_InputComponent->BindAction("Crouch", IE_Released, this, &AMPFPSLocalPlayer::EndCrouch);
+	_InputComponent->BindAction("Zoom", IE_Pressed, this, &AMPFPSLocalPlayer::CameraZoomIn);
+	_InputComponent->BindAction("Zoom", IE_Released, this, &AMPFPSLocalPlayer::CameraZoomOut);
+	_InputComponent->BindAction("Sprint", IE_Pressed, this, &AMPFPSLocalPlayer::SprintStart);
+	_InputComponent->BindAction("Sprint", IE_Released, this, &AMPFPSLocalPlayer::SprintStop);
 }
 
 float AMPFPSLocalPlayer::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Ouch!"));
 	ApplyDamage(Damage);
 	return Health;
 }
@@ -185,6 +193,9 @@ bool AMPFPSLocalPlayer::SwitchWeapon_Validate()
 
 void AMPFPSLocalPlayer::SetupWeaponMesh_Implementation(AMPFPSWeapon* Weapon)
 {
+	if (!Weapon || !Weapon->WeaponMesh || !GetMesh())
+		return;
+
 	if (EquippedWeapon)
 	{
 		FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, false);
@@ -210,6 +221,26 @@ void AMPFPSLocalPlayer::StrafeRight(float Value)
 	}
 }
 
+void AMPFPSLocalPlayer::CameraZoomIn()
+{
+	FirstPersonCameraComponent->SetFieldOfView(60.f);
+}
+
+void AMPFPSLocalPlayer::CameraZoomOut()
+{
+	FirstPersonCameraComponent->SetFieldOfView(90.f);
+}
+
+void AMPFPSLocalPlayer::SprintStart()
+{
+	GetMovementComponent()->Velocity = GetMovementComponent()->Velocity * 2;
+}
+
+void AMPFPSLocalPlayer::SprintStop()
+{
+	GetMovementComponent()->Velocity = GetMovementComponent()->Velocity / 2;
+}
+
 void AMPFPSLocalPlayer::Fire()
 {
 	if (!EquippedWeapon || Health <= 0)
@@ -230,7 +261,8 @@ void AMPFPSLocalPlayer::Fire()
 
 void AMPFPSLocalPlayer::EquipWeapon(AMPFPSWeapon* Weapon)
 {
-	check(Weapon != nullptr);
+	if (Weapon == nullptr)
+		return;
 	//TODO: REALLY don't like this stuff. Mustn't be implemented this way.
 	SetupWeaponMesh(Weapon);
 	UnequipWeapon();

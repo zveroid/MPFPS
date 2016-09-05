@@ -36,6 +36,7 @@ static FORCEINLINE bool Trace(
 AMPFPSWeapon::AMPFPSWeapon() :
 	Ammo(0)
 	, Cooldown(0.f)
+	, Reloading(0.f)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -46,6 +47,7 @@ AMPFPSWeapon::AMPFPSWeapon(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, Ammo(0)
 	, Cooldown(0.f)
+	, Reloading(0.f)
 {
 	WeaponMesh = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, TEXT("WeaponMesh"));
 	RootComponent = WeaponMesh;
@@ -60,15 +62,6 @@ void AMPFPSWeapon::BeginPlay()
 
 	Ammo = WeaponConfig.ClipSize;
 	Cooldown = 0.f;
-	//if (WeaponConfig.MuzzleFlash)
-	//{
-	//	MuzzleFlashComponent = UGameplayStatics::SpawnEmitterAttached(WeaponConfig.MuzzleFlash, WeaponMesh, TEXT("Muzzle"));
-	//	if (MuzzleFlashComponent)
-	//	{
-	//		MuzzleFlashComponent->bAllowRecycling = true;
-	//		MuzzleFlashComponent->WarmupTime = WeaponConfig.Cooldown;
-	//	}
-	//}
 
 	switch (ProjectileType)
 	{
@@ -93,13 +86,20 @@ void AMPFPSWeapon::Tick( float DeltaTime )
 	Super::Tick( DeltaTime );
 	if (Cooldown >= 0.f)
 		Cooldown -= DeltaTime;
+	if (Reloading >= 0.f)
+	{
+		Reloading -= DeltaTime;
+		if (Reloading <= 0.f)
+			Ammo = WeaponConfig.ClipSize;
+	}
 }
 
 void AMPFPSWeapon::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMPFPSWeapon, Cooldown);
 	DOREPLIFETIME(AMPFPSWeapon, Ammo);
+	DOREPLIFETIME(AMPFPSWeapon, Cooldown);
+	DOREPLIFETIME(AMPFPSWeapon, Reloading);
 }
 
 void AMPFPSWeapon::Shoot_Implementation(const FVector & ShootDirection)
@@ -111,6 +111,9 @@ void AMPFPSWeapon::Shoot_Implementation(const FVector & ShootDirection)
 			ShootEffect();
 			ShootFunc(WeaponMesh->GetSocketLocation(TEXT("Muzzle")), ShootDirection);
 			Ammo--;
+			//TODO: Make this stuff more elegant. Play some animation etc...
+			if (Ammo == 0)
+				Reloading = WeaponConfig.ReloadingTime;
 			Cooldown = WeaponConfig.Cooldown;
 		}
 	}

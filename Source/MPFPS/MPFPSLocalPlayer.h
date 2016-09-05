@@ -31,6 +31,8 @@ public:
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void SetPlayerDefaults() override;
 	
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
@@ -85,6 +87,18 @@ public:
 
 	UFUNCTION()
 	void EndCrouch() { SetIsCrouched(false); }
+
+	UFUNCTION()
+	void CameraZoomIn();
+
+	UFUNCTION()
+	void CameraZoomOut();
+
+	UFUNCTION()
+	void SprintStart();
+
+	UFUNCTION()
+	void SprintStop();
 
 	UFUNCTION()
 	void Fire();

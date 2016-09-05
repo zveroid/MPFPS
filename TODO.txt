@@ -1,4 +1,13 @@
-1. Weapon Reloading
-2. Player respawn after death
-3. Menu (Choose player color/Choose weapons)
-4. Scoreboard
+Urgent:
+1. Player respawn after death
+2. Menu (Choose player color/Choose weapons)
+3. Scoreboard
+
+Important:
+1. Attach animations for weapons changing and reloading
+2. Weapon recoil
+3. Sprint, strafe, crouch
+4. Weapon contiguous shooting
+5. Characters hit zones and hit effects
+6. Projectile weapon and grenades
+7. Weapon zoom animated and aimed
