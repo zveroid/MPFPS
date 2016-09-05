@@ -1,0 +1,4 @@
+1. Weapon Reloading
+2. Player respawn after death
+3. Menu (Host game/List servers/Connect to host/Choose player color/Choose weapons)
+4. Scoreboard
