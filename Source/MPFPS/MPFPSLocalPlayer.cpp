@@ -26,8 +26,8 @@ AMPFPSLocalPlayer::AMPFPSLocalPlayer(const FObjectInitializer& ObjectInitializer
 	, Health(100)
 	, RespawnTimer(0.f)
 {
-	static ConstructorHelpers::FClassFinder<AMPFPSWeapon> MainWeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/BP_Weapon_Shotgun.BP_Weapon_Shotgun_C'"));
-	static ConstructorHelpers::FClassFinder<AMPFPSWeapon> SecondaryWeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/BP_Weapon_MP443.BP_Weapon_MP443_C'"));
+	static ConstructorHelpers::FClassFinder<AMPFPSWeapon> MainWeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/Weapons/BP_Weapon_Shotgun.BP_Weapon_Shotgun_C'"));
+	static ConstructorHelpers::FClassFinder<AMPFPSWeapon> SecondaryWeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/Weapons/BP_Weapon_MP443.BP_Weapon_MP443_C'"));
 
 	if (MainWeaponBlueprint.Succeeded())
 	{
@@ -231,6 +231,7 @@ void AMPFPSLocalPlayer::Fire()
 void AMPFPSLocalPlayer::EquipWeapon(AMPFPSWeapon* Weapon)
 {
 	check(Weapon != nullptr);
+	//TODO: REALLY don't like this stuff. Mustn't be implemented this way.
 	SetupWeaponMesh(Weapon);
 	UnequipWeapon();
 	EquippedWeapon = Weapon;

@@ -144,7 +144,6 @@ void AMPFPSWeapon::InstantShoot(const FVector& ShootStartLocation, const FVector
 
 	if (Trace(GetWorld(), Start, End, hit, Instigator))
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, hit.GetActor()->GetName());
 		DrawDebugLine(GetWorld(), Start, hit.ImpactPoint, FColor::Black, true);
 		TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 
@@ -152,7 +151,6 @@ void AMPFPSWeapon::InstantShoot(const FVector& ShootStartLocation, const FVector
 	}
 	else
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Miss!"));
 		DrawDebugLine(GetWorld(), Start, End, FColor::Black, true);
 	}
 }

@@ -17,7 +17,7 @@ AMPFPSHUD::AMPFPSHUD(const FObjectInitializer& ObjectInitializer)
 	, HealthTextBlock(nullptr)
 	, AmmoTextBlock(nullptr)
 {
-	static ConstructorHelpers::FClassFinder<UUserWidget> HudWidgetObj(TEXT("/Game/Blueprints/BP_HUD"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> HudWidgetObj(TEXT("/Game/Blueprints/Widgets/BP_HUD"));
 	check(HudWidgetObj.Succeeded());
 	HudWidgetClass = HudWidgetObj.Class;
 }
