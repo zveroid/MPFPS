@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="..\..\MPFPS.uproject" />
+    <Filter Include="Source">
+      <UniqueIdentifier>{9CCA979D-EEDA-4D64-88FE-5C39403B7F87}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Source\MPFPS.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="..\..\Source\MPFPSEditor.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <Filter Include="Config">
+      <UniqueIdentifier>{B8424756-4295-4E23-A4F4-3AA108B938BF}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Config\DefaultEditor.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultEngine.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultGame.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultInput.ini">
+      <Filter>Config</Filter>
+    </None>
+    <Filter Include="Source\MPFPS">
+      <UniqueIdentifier>{3A46FD38-EE82-4756-81AB-EC035A7C28EF}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Source\MPFPS\MPFPS.Build.cs">
+      <Filter>Source\MPFPS</Filter>
+    </None>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPS.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPS.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSGameMode.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSGameMode.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSHUD.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSHUD.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSLocalPlayer.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSLocalPlayer.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSWeapon.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSWeapon.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSProjectile.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSProjectile.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
