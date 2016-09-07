@@ -54,6 +54,7 @@ void AMPFPSLocalPlayer::BeginPlay()
 void AMPFPSLocalPlayer::SetPlayerDefaults()
 {
 	Health = 100;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed;
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -233,12 +234,12 @@ void AMPFPSLocalPlayer::CameraZoomOut()
 
 void AMPFPSLocalPlayer::SprintStart()
 {
-	GetMovementComponent()->Velocity = GetMovementComponent()->Velocity * 2;
+	GetCharacterMovement()->MaxWalkSpeed *= 2;
 }
 
 void AMPFPSLocalPlayer::SprintStop()
 {
-	GetMovementComponent()->Velocity = GetMovementComponent()->Velocity / 2;
+	GetCharacterMovement()->MaxWalkSpeed /= 2;
 }
 
 void AMPFPSLocalPlayer::Fire()

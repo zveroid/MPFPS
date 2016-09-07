@@ -123,6 +123,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	int		Health;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float	DefaultMovementSpeed;
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category = Weapon, replicated )
 	AMPFPSWeapon*		EquippedWeapon;
