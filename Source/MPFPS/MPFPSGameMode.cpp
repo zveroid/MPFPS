@@ -8,7 +8,7 @@
 AMPFPSGameMode::AMPFPSGameMode(const FObjectInitializer& ObjectInitializer) :
 	Super(ObjectInitializer)
 {
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnObject(TEXT("Pawn'/Game/Blueprints/BP_LocalPlayer.BP_LocalPlayer_C'"));
+	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnObject(TEXT("Pawn'/Game/Blueprints/BP_Player.BP_Player_C'"));
 	if (PlayerPawnObject.Succeeded())
 	{
 		DefaultPawnClass = PlayerPawnObject.Class;

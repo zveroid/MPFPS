@@ -50,12 +50,6 @@
     <ClInclude Include="..\..\Source\MPFPS\MPFPSHUD.h">
       <Filter>Source\MPFPS</Filter>
     </ClInclude>
-    <ClCompile Include="..\..\Source\MPFPS\MPFPSLocalPlayer.cpp">
-      <Filter>Source\MPFPS</Filter>
-    </ClCompile>
-    <ClInclude Include="..\..\Source\MPFPS\MPFPSLocalPlayer.h">
-      <Filter>Source\MPFPS</Filter>
-    </ClInclude>
     <ClCompile Include="..\..\Source\MPFPS\MPFPSWeapon.cpp">
       <Filter>Source\MPFPS</Filter>
     </ClCompile>
@@ -67,9 +61,15 @@
     <ClInclude Include="..\..\Source\MPFPS\MPFPSProjectile.h">
       <Filter>Source\MPFPS</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSPlayer.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\MPFPS\MPFPSProjectile.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSPlayer.cpp">
       <Filter>Source\MPFPS</Filter>
     </ClCompile>
   </ItemGroup>

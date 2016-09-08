@@ -6,7 +6,7 @@
 #include "Runtime/UMG/Public/Slate/SObjectWidget.h"
 #include "Runtime/UMG/Public/IUMGModule.h"
 #include "Runtime/UMG/Public/Blueprint/UserWidget.h"
-#include "MPFPSLocalPlayer.h"
+#include "MPFPSPlayer.h"
 #include "MPFPSWeapon.h"
 #include "MPFPSHUD.h"
 
@@ -42,7 +42,7 @@ void AMPFPSHUD::DrawHUD()
 	if (!HudWidget)
 		return;
 
-	AMPFPSLocalPlayer* OwnPlayer = Cast<AMPFPSLocalPlayer>(GetOwningPawn());
+	AMPFPSPlayer* OwnPlayer = Cast<AMPFPSPlayer>(GetOwningPawn());
 
 	check(HealthTextBlock != nullptr && AmmoTextBlock != nullptr);
 	

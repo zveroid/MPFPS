@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/Character.h"
-#include "MPFPSLocalPlayer.generated.h"
+#include "MPFPSPlayer.generated.h"
 
 class AMPFPSWeapon;
 
@@ -20,14 +20,14 @@ struct FPlayerInventory
 };
 
 UCLASS()
-class MPFPS_API AMPFPSLocalPlayer : public ACharacter
+class MPFPS_API AMPFPSPlayer : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	AMPFPSLocalPlayer();
-	AMPFPSLocalPlayer(const FObjectInitializer& ObjectInitializer);
+	AMPFPSPlayer();
+	AMPFPSPlayer(const FObjectInitializer& ObjectInitializer);
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -125,6 +125,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float	DefaultMovementSpeed;
+
+	UPROPERTY(EditAnywhere)
+	int32	MaxHealth;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = Weapon, replicated )

@@ -32,6 +32,9 @@ struct FWeaponConfig
 	float	ShootingRejection;
 
 	UPROPERTY(EditDefaultsOnly, Category = Config)
+	float	Recoil;
+
+	UPROPERTY(EditDefaultsOnly, Category = Config)
 	TSubclassOf<class AMPFPSProjectile> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = Animation)

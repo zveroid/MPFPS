@@ -4,26 +4,26 @@
 #include "Net/UnrealNetwork.h"
 #include "Runtime/Engine/Classes/Animation/AnimInstance.h"
 #include "MPFPSWeapon.h"
-#include "MPFPSLocalPlayer.h"
+#include "MPFPSPlayer.h"
 
 
 // Sets default values
-AMPFPSLocalPlayer::AMPFPSLocalPlayer() : 
+AMPFPSPlayer::AMPFPSPlayer() : 
 	MainWeaponClass(nullptr)
 	, SecondaryWeaponClass(nullptr)
 	, EquippedWeapon(nullptr)
-	, Health(100)
+	, Health(0)
 	, CameraPitch(0)
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-AMPFPSLocalPlayer::AMPFPSLocalPlayer(const FObjectInitializer& ObjectInitializer) :
+AMPFPSPlayer::AMPFPSPlayer(const FObjectInitializer& ObjectInitializer) :
 	Super(ObjectInitializer)
 	, MainWeaponClass(nullptr)
 	, SecondaryWeaponClass(nullptr)
 	, EquippedWeapon(nullptr)
-	, Health(100)
+	, Health(0)
 	, RespawnTimer(0.f)
 {
 	static ConstructorHelpers::FClassFinder<AMPFPSWeapon> MainWeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/Weapons/BP_Weapon_Shotgun.BP_Weapon_Shotgun_C'"));
@@ -46,14 +46,14 @@ AMPFPSLocalPlayer::AMPFPSLocalPlayer(const FObjectInitializer& ObjectInitializer
 }
 
 // Called when the game starts or when spawned
-void AMPFPSLocalPlayer::BeginPlay()
+void AMPFPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void AMPFPSLocalPlayer::SetPlayerDefaults()
+void AMPFPSPlayer::SetPlayerDefaults()
 {
-	Health = 100;
+	Health = MaxHealth;
 	GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed;
 
 	FActorSpawnParameters SpawnParams;
@@ -77,7 +77,7 @@ void AMPFPSLocalPlayer::SetPlayerDefaults()
 }
 
 // Called every frame
-void AMPFPSLocalPlayer::Tick( float DeltaTime )
+void AMPFPSPlayer::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
 	//TODO: Must be more elegant way
@@ -111,45 +111,47 @@ void AMPFPSLocalPlayer::Tick( float DeltaTime )
 }
 
 // Called to bind functionality to input
-void AMPFPSLocalPlayer::SetupPlayerInputComponent(class UInputComponent* _InputComponent)
+void AMPFPSPlayer::SetupPlayerInputComponent(class UInputComponent* _InputComponent)
 {
 	Super::SetupPlayerInputComponent(_InputComponent);
 
-	_InputComponent->BindAxis("MoveForward", this, &AMPFPSLocalPlayer::MoveForward);
-	_InputComponent->BindAxis("StrafeRight", this, &AMPFPSLocalPlayer::StrafeRight);
-	_InputComponent->BindAxis("Turn", this, &AMPFPSLocalPlayer::AddControllerYawInput);
-	_InputComponent->BindAxis("LookUp", this, &AMPFPSLocalPlayer::AddControllerPitchInput);
-	_InputComponent->BindAction("Jump", IE_Pressed, this, &AMPFPSLocalPlayer::StartJump);
-	_InputComponent->BindAction("Jump", IE_Released, this, &AMPFPSLocalPlayer::EndJump);
-	_InputComponent->BindAction("Fire", IE_Pressed, this, &AMPFPSLocalPlayer::Fire);
-	_InputComponent->BindAction("NextWeapon", IE_Pressed, this, &AMPFPSLocalPlayer::SwitchWeapon);
-	_InputComponent->BindAction("PrevWeapon", IE_Pressed, this, &AMPFPSLocalPlayer::SwitchWeapon);
-	_InputComponent->BindAction("Crouch", IE_Pressed, this, &AMPFPSLocalPlayer::StartCrouch);
-	_InputComponent->BindAction("Crouch", IE_Released, this, &AMPFPSLocalPlayer::EndCrouch);
-	_InputComponent->BindAction("Zoom", IE_Pressed, this, &AMPFPSLocalPlayer::CameraZoomIn);
-	_InputComponent->BindAction("Zoom", IE_Released, this, &AMPFPSLocalPlayer::CameraZoomOut);
-	_InputComponent->BindAction("Sprint", IE_Pressed, this, &AMPFPSLocalPlayer::SprintStart);
-	_InputComponent->BindAction("Sprint", IE_Released, this, &AMPFPSLocalPlayer::SprintStop);
+	_InputComponent->BindAxis("MoveForward", this, &AMPFPSPlayer::MoveForward);
+	_InputComponent->BindAxis("StrafeRight", this, &AMPFPSPlayer::StrafeRight);
+	_InputComponent->BindAxis("Turn", this, &AMPFPSPlayer::AddControllerYawInput);
+	_InputComponent->BindAxis("LookUp", this, &AMPFPSPlayer::AddControllerPitchInput);
+	_InputComponent->BindAction("Jump", IE_Pressed, this, &AMPFPSPlayer::StartJump);
+	_InputComponent->BindAction("Jump", IE_Released, this, &AMPFPSPlayer::EndJump);
+	_InputComponent->BindAction("Fire", IE_Pressed, this, &AMPFPSPlayer::Fire);
+	_InputComponent->BindAction("NextWeapon", IE_Pressed, this, &AMPFPSPlayer::SwitchWeapon);
+	_InputComponent->BindAction("PrevWeapon", IE_Pressed, this, &AMPFPSPlayer::SwitchWeapon);
+	_InputComponent->BindAction("Crouch", IE_Pressed, this, &AMPFPSPlayer::StartCrouch);
+	_InputComponent->BindAction("Crouch", IE_Released, this, &AMPFPSPlayer::EndCrouch);
+	_InputComponent->BindAction("Zoom", IE_Pressed, this, &AMPFPSPlayer::CameraZoomIn);
+	_InputComponent->BindAction("Zoom", IE_Released, this, &AMPFPSPlayer::CameraZoomOut);
+	_InputComponent->BindAction("Sprint", IE_Pressed, this, &AMPFPSPlayer::SprintStart);
+	_InputComponent->BindAction("Sprint", IE_Released, this, &AMPFPSPlayer::SprintStop);
 }
 
-float AMPFPSLocalPlayer::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
+float AMPFPSPlayer::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
 {
 	ApplyDamage(Damage);
 	return Health;
 }
 
-void AMPFPSLocalPlayer::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+void AMPFPSPlayer::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMPFPSLocalPlayer, EquippedWeapon);
-	DOREPLIFETIME(AMPFPSLocalPlayer, CameraPitch);
-	DOREPLIFETIME(AMPFPSLocalPlayer, Health);
+	DOREPLIFETIME(AMPFPSPlayer, EquippedWeapon);
+	DOREPLIFETIME(AMPFPSPlayer, CameraPitch);
+	DOREPLIFETIME(AMPFPSPlayer, Health);
 }
 
-void AMPFPSLocalPlayer::MoveForward(float Value)
+void AMPFPSPlayer::MoveForward(float Value)
 {
 	if (Controller != nullptr && Value != 0.0f && Health > 0)
 	{
+		if (Value < 0.f)
+			SprintStop();
 		FRotator Rotation = Controller->GetControlRotation();
 		
 		if (GetCharacterMovement()->IsMovingOnGround() || GetCharacterMovement()->IsFalling())
@@ -161,18 +163,29 @@ void AMPFPSLocalPlayer::MoveForward(float Value)
 	}
 }
 
-void AMPFPSLocalPlayer::ApplyDamage_Implementation(float Damage)
+void AMPFPSPlayer::StrafeRight(float Value)
+{
+	if (Controller != nullptr && Value != 0.0f && Health > 0)
+	{
+		SprintStop();
+		FRotator Rotation = Controller->GetControlRotation();
+		const FVector Direction = FRotationMatrix(Rotation).GetScaledAxis(EAxis::Y);
+		AddMovementInput(Direction, Value);
+	}
+}
+
+void AMPFPSPlayer::ApplyDamage_Implementation(float Damage)
 {
 	if (Health > 0)
 		Health -= Damage;
 }
 
-bool AMPFPSLocalPlayer::ApplyDamage_Validate(float Damage)
+bool AMPFPSPlayer::ApplyDamage_Validate(float Damage)
 {
 	return true;
 }
 
-void AMPFPSLocalPlayer::SwitchWeapon_Implementation()
+void AMPFPSPlayer::SwitchWeapon_Implementation()
 {
 	if (Health <= 0)
 		return;
@@ -187,12 +200,12 @@ void AMPFPSLocalPlayer::SwitchWeapon_Implementation()
 	}
 }
 
-bool AMPFPSLocalPlayer::SwitchWeapon_Validate()
+bool AMPFPSPlayer::SwitchWeapon_Validate()
 {
 	return true;
 }
 
-void AMPFPSLocalPlayer::SetupWeaponMesh_Implementation(AMPFPSWeapon* Weapon)
+void AMPFPSPlayer::SetupWeaponMesh_Implementation(AMPFPSWeapon* Weapon)
 {
 	if (!Weapon || !Weapon->WeaponMesh || !GetMesh())
 		return;
@@ -212,37 +225,30 @@ void AMPFPSLocalPlayer::SetupWeaponMesh_Implementation(AMPFPSWeapon* Weapon)
 	}
 }
 
-void AMPFPSLocalPlayer::StrafeRight(float Value)
-{
-	if (Controller != nullptr && Value != 0.0f && Health > 0)
-	{
-		FRotator Rotation = Controller->GetControlRotation();
-		const FVector Direction = FRotationMatrix(Rotation).GetScaledAxis(EAxis::Y);
-		AddMovementInput(Direction, Value);
-	}
-}
-
-void AMPFPSLocalPlayer::CameraZoomIn()
+void AMPFPSPlayer::CameraZoomIn()
 {
 	FirstPersonCameraComponent->SetFieldOfView(60.f);
 }
 
-void AMPFPSLocalPlayer::CameraZoomOut()
+void AMPFPSPlayer::CameraZoomOut()
 {
 	FirstPersonCameraComponent->SetFieldOfView(90.f);
 }
 
-void AMPFPSLocalPlayer::SprintStart()
+void AMPFPSPlayer::SprintStart()
 {
-	GetCharacterMovement()->MaxWalkSpeed *= 2;
+	if (FVector::DotProduct(GetVelocity(), GetActorForwardVector()) > 0.5f)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed * 2;
+	}
 }
 
-void AMPFPSLocalPlayer::SprintStop()
+void AMPFPSPlayer::SprintStop()
 {
-	GetCharacterMovement()->MaxWalkSpeed /= 2;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed;
 }
 
-void AMPFPSLocalPlayer::Fire()
+void AMPFPSPlayer::Fire()
 {
 	if (!EquippedWeapon || Health <= 0)
 		return;
@@ -250,9 +256,10 @@ void AMPFPSLocalPlayer::Fire()
 	FVector CameraLocation;
 	FRotator CameraRotation;
 	GetActorEyesViewPoint(CameraLocation, CameraRotation);
-	if (EquippedWeapon->CanShoot())
+	if (EquippedWeapon->CanShoot() && GetCharacterMovement()->MaxWalkSpeed <= DefaultMovementSpeed)
 	{
 		EquippedWeapon->Shoot(CameraRotation.Vector());
+		AddControllerPitchInput(-(EquippedWeapon->WeaponConfig.Recoil));
 		if (EquippedWeapon->WeaponConfig.ShootingAnim)
 		{
 			GetMesh()->GetAnimInstance()->Montage_Play(EquippedWeapon->WeaponConfig.ShootingAnim);
@@ -260,7 +267,7 @@ void AMPFPSLocalPlayer::Fire()
 	}
 }
 
-void AMPFPSLocalPlayer::EquipWeapon(AMPFPSWeapon* Weapon)
+void AMPFPSPlayer::EquipWeapon(AMPFPSWeapon* Weapon)
 {
 	if (Weapon == nullptr)
 		return;
@@ -270,7 +277,7 @@ void AMPFPSLocalPlayer::EquipWeapon(AMPFPSWeapon* Weapon)
 	EquippedWeapon = Weapon;
 }
 
-void AMPFPSLocalPlayer::UnequipWeapon()
+void AMPFPSPlayer::UnequipWeapon()
 {
 	if (EquippedWeapon)
 	{

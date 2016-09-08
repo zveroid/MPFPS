@@ -420,8 +420,8 @@
     <ClInclude Include="..\..\Source\MPFPS\MPFPSGameMode.h" />
     <ClCompile Include="..\..\Source\MPFPS\MPFPSHUD.cpp" />
     <ClInclude Include="..\..\Source\MPFPS\MPFPSHUD.h" />
-    <ClCompile Include="..\..\Source\MPFPS\MPFPSLocalPlayer.cpp" />
-    <ClInclude Include="..\..\Source\MPFPS\MPFPSLocalPlayer.h" />
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSPlayer.cpp" />
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSPlayer.h" />
     <ClCompile Include="..\..\Source\MPFPS\MPFPSProjectile.cpp" />
     <ClCompile Include="..\..\Source\MPFPS\MPFPSWeapon.cpp" />
     <ClInclude Include="..\..\Source\MPFPS\MPFPSProjectile.h" />
