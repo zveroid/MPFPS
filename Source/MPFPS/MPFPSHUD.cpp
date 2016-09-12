@@ -1,11 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MPFPS.h"
+
 #include "Runtime/UMG/Public/UMG.h"
 #include "Runtime/UMG/Public/UMGStyle.h"
 #include "Runtime/UMG/Public/Slate/SObjectWidget.h"
 #include "Runtime/UMG/Public/IUMGModule.h"
 #include "Runtime/UMG/Public/Blueprint/UserWidget.h"
+
 #include "MPFPSPlayer.h"
 #include "MPFPSWeapon.h"
 #include "MPFPSHUD.h"
@@ -13,43 +15,80 @@
 AMPFPSHUD::AMPFPSHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, HudWidgetClass(nullptr)
-	, HudWidget(nullptr)
-	, HealthTextBlock(nullptr)
-	, AmmoTextBlock(nullptr)
+	, InventoryWidgetClass(nullptr)
+	, LeaderboardWidgetClass(nullptr)
+	, CurrentWidget(nullptr)
 {
 	static ConstructorHelpers::FClassFinder<UUserWidget> HudWidgetObj(TEXT("/Game/Blueprints/Widgets/BP_HUD"));
-	check(HudWidgetObj.Succeeded());
+	static ConstructorHelpers::FClassFinder<UUserWidget> InventoryWidgetObj(TEXT("/Game/Blueprints/Widgets/BP_Inventory"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> LeaderboardWidgetObj(TEXT("/Game/Blueprints/Widgets/BP_Leaderboard"));
 	HudWidgetClass = HudWidgetObj.Class;
+	InventoryWidgetClass = InventoryWidgetObj.Class;
+	LeaderboardWidgetClass = LeaderboardWidgetObj.Class;
+
+	/*this->bReplicates = false;
+	this->bNetLoadOnClient = true;
+	this->bOnlyRelevantToOwner = true;*/
 }
 
 void AMPFPSHUD::BeginPlay()
 {
-	check(HudWidgetClass);
-	if (HudWidgetClass)
-	{
-		HudWidget = CreateWidget<UUserWidget>(this->GetOwningPlayerController(), this->HudWidgetClass);
-		HudWidget->AddToViewport();
-
-		HealthTextBlock = Cast<UTextBlock>(HudWidget->GetWidgetFromName(TEXT("HealthText")));
-		AmmoTextBlock = Cast<UTextBlock>(HudWidget->GetWidgetFromName(TEXT("AmmoText")));
-	}
+	Super::BeginPlay();
 }
 
 void AMPFPSHUD::DrawHUD()
 {
 	Super::DrawHUD();
+}
 
-	if (!HudWidget)
-		return;
-
-	AMPFPSPlayer* OwnPlayer = Cast<AMPFPSPlayer>(GetOwningPawn());
-
-	check(HealthTextBlock != nullptr && AmmoTextBlock != nullptr);
-	
-	if (OwnPlayer)
+void AMPFPSHUD::SwitchToHud()
+{
+	if (CurrentWidget)
 	{
-		check(OwnPlayer->GetEquippedWeapon() != nullptr);
-		HealthTextBlock->SetText(FText::FromString(FString::Printf(TEXT("%d"), OwnPlayer->Health)));
-		AmmoTextBlock->SetText(FText::FromString(FString::Printf(TEXT("%u"), OwnPlayer->GetEquippedWeapon()->GetAmmo())));
+		if (CurrentWidget->IsA(HudWidgetClass))
+			return;
+
+		CurrentWidget->RemoveFromParent();
 	}
+
+	CurrentWidget = CreateWidget<UUserWidget>(GetOwningPlayerController(), HudWidgetClass);
+	CurrentWidget->AddToViewport();
+	if (PlayerOwner)
+	{
+		PlayerOwner->SetInputMode(FInputModeGameOnly());
+		PlayerOwner->bShowMouseCursor = false;
+	}
+}
+
+void AMPFPSHUD::SwitchToInventory()
+{
+	if (CurrentWidget)
+	{
+		if (CurrentWidget->IsA(InventoryWidgetClass))
+			return;
+
+		CurrentWidget->RemoveFromParent();
+	}
+
+	CurrentWidget = CreateWidget<UUserWidget>(GetOwningPlayerController(), InventoryWidgetClass);
+	CurrentWidget->AddToViewport();
+	if (PlayerOwner)
+	{
+		PlayerOwner->SetInputMode(FInputModeUIOnly());
+		PlayerOwner->bShowMouseCursor = true;
+	}
+}
+
+void AMPFPSHUD::SwitchToLeaderboard()
+{
+	if (CurrentWidget)
+	{
+		if (CurrentWidget->IsA(LeaderboardWidgetClass))
+			return;
+
+		CurrentWidget->RemoveFromParent();
+	}
+
+	CurrentWidget = CreateWidget<UUserWidget>(GetOwningPlayerController(), LeaderboardWidgetClass);
+	CurrentWidget->AddToViewport();
 }

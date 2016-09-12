@@ -64,12 +64,18 @@
     <ClInclude Include="..\..\Source\MPFPS\MPFPSPlayer.h">
       <Filter>Source\MPFPS</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSPlayerController.h">
+      <Filter>Source\MPFPS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\MPFPS\MPFPSProjectile.cpp">
       <Filter>Source\MPFPS</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\MPFPS\MPFPSPlayer.cpp">
+      <Filter>Source\MPFPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSPlayerController.cpp">
       <Filter>Source\MPFPS</Filter>
     </ClCompile>
   </ItemGroup>

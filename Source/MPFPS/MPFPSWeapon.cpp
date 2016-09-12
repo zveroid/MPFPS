@@ -2,7 +2,9 @@
 
 #include "MPFPS.h"
 #include "Net/UnrealNetwork.h"
+#include "Runtime/Engine/Classes/Animation/AnimInstance.h"
 #include "MPFPSProjectile.h"
+#include "MPFPSPlayer.h"
 #include "MPFPSWeapon.h"
 
 static FORCEINLINE bool Trace(
@@ -84,8 +86,14 @@ void AMPFPSWeapon::BeginPlay()
 void AMPFPSWeapon::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
-	if (Cooldown >= 0.f)
+	if (Cooldown > 0.f)
+	{
 		Cooldown -= DeltaTime;
+		if (Cooldown <= 0.f && RapidShooting)
+		{
+			Shoot(FVector(), FVector());
+		}
+	}
 	if (Reloading >= 0.f)
 	{
 		Reloading -= DeltaTime;
@@ -102,24 +110,36 @@ void AMPFPSWeapon::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutL
 	DOREPLIFETIME(AMPFPSWeapon, Reloading);
 }
 
-void AMPFPSWeapon::Shoot_Implementation(const FVector & ShootDirection)
+void AMPFPSWeapon::Shoot_Implementation(const FVector& ShootStartLocation, const FVector & ShootDirection)
 {
 	if (Cooldown <= 0.f)
 	{
 		if (Ammo > 0)
 		{
-			ShootEffect();
-			ShootFunc(WeaponMesh->GetSocketLocation(TEXT("Muzzle")), ShootDirection);
-			Ammo--;
-			//TODO: Make this stuff more elegant. Play some animation etc...
-			if (Ammo == 0)
-				Reloading = WeaponConfig.ReloadingTime;
-			Cooldown = WeaponConfig.Cooldown;
+			AMPFPSPlayer* owner = Cast<AMPFPSPlayer>(Instigator);
+			if (owner)
+			{
+				ShootEffect();
+				//TODO: Shoot from the muzzle looks better right now. Prob'ly make it shooting from camera center later
+				FVector CameraLocation;
+				FRotator CameraRotation;
+				Instigator->GetActorEyesViewPoint(CameraLocation, CameraRotation);
+				ShootFunc(WeaponMesh->GetSocketLocation(TEXT("Muzzle")), CameraRotation.Vector());
+				Ammo--;
+				owner->AddControllerPitchInput(-(WeaponConfig.Recoil));
+				//TODO: Make this stuff more elegant. Play some animation etc...
+				if (Ammo == 0)
+				{
+					StopShooting();
+					Reloading = WeaponConfig.ReloadingTime;
+				}
+				Cooldown = WeaponConfig.Cooldown;
+			}
 		}
 	}
 }
 
-bool AMPFPSWeapon::Shoot_Validate(const FVector & ShootDirection)
+bool AMPFPSWeapon::Shoot_Validate(const FVector& ShootStartLocation, const FVector & ShootDirection)
 {
 	return true;
 }
@@ -135,6 +155,22 @@ void AMPFPSWeapon::ShootEffect_Implementation()
 			MuzzleFlashComponent->ActivateSystem();
 		}
 	}
+
+	if (WeaponConfig.ShootingAnim)
+	{
+		Cast<AMPFPSPlayer>(Instigator)->GetMesh()->GetAnimInstance()->Montage_Play(WeaponConfig.ShootingAnim);
+	}
+}
+
+void AMPFPSWeapon::StartShooting_Implementation()
+{
+	RapidShooting = WeaponConfig.RapidFire;
+	Shoot(FVector(), FVector());
+}
+
+void AMPFPSWeapon::StopShooting_Implementation()
+{
+	RapidShooting = false;
 }
 
 void AMPFPSWeapon::InstantShoot(const FVector& ShootStartLocation, const FVector& ShootDirection)
@@ -147,14 +183,14 @@ void AMPFPSWeapon::InstantShoot(const FVector& ShootStartLocation, const FVector
 
 	if (Trace(GetWorld(), Start, End, hit, Instigator))
 	{
-		DrawDebugLine(GetWorld(), Start, hit.ImpactPoint, FColor::Black, true);
+		//DrawDebugLine(GetWorld(), Start, hit.ImpactPoint, FColor::Black, true);
 		TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 
-		UGameplayStatics::ApplyPointDamage(hit.GetActor(), 5.f, hit.TraceEnd - hit.TraceStart, hit, GetOwner()->GetInstigatorController(), GetOwner(), ValidDamageTypeClass);
+		UGameplayStatics::ApplyPointDamage(hit.GetActor(), WeaponConfig.Damage, hit.TraceEnd - hit.TraceStart, hit, GetOwner()->GetInstigatorController(), GetOwner(), ValidDamageTypeClass);
 	}
 	else
 	{
-		DrawDebugLine(GetWorld(), Start, End, FColor::Black, true);
+		//DrawDebugLine(GetWorld(), Start, End, FColor::Black, true);
 	}
 }
 
@@ -170,7 +206,7 @@ void AMPFPSWeapon::ProjectileShoot(const FVector& ShootStartLocation, const FVec
 {
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Instigator = Instigator;
-	AMPFPSProjectile* const Projectile = GetWorld()->SpawnActor<AMPFPSProjectile>(WeaponConfig.ProjectileClass, ShootStartLocation, FRotator(), SpawnParams);
+	AMPFPSProjectile* const Projectile = GetWorld()->SpawnActor<AMPFPSProjectile>(WeaponConfig.ProjectileClass, WeaponMesh->GetSocketLocation(TEXT("Muzzle")), WeaponMesh->GetSocketRotation(TEXT("Muzzle")), SpawnParams);
 	if (Projectile)
 	{
 		Projectile->Throw(ShootDirection);

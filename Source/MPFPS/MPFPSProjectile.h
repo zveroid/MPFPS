@@ -5,6 +5,33 @@
 #include "GameFramework/Actor.h"
 #include "MPFPSProjectile.generated.h"
 
+USTRUCT()
+struct FProjectileConfig
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = Explosion)
+	uint32	EpicenterDamage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Explosion)
+	uint32	MinimumDamage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Explosion)
+	float	Falloff;
+
+	UPROPERTY(EditDefaultsOnly, Category = Explosion)
+	float	ExplosionInnerRadius;
+
+	UPROPERTY(EditDefaultsOnly, Category = Explosion)
+	float	ExplosionOuterRadius;
+
+	UPROPERTY(EditDefaultsOnly, Category = Explosion)
+	uint32	ExplosionImpulse;
+
+	UPROPERTY(EditDefaultsOnly, Category = Explosion)
+	UParticleSystem*	ExplosionEffect;
+};
+
 UCLASS()
 class MPFPS_API AMPFPSProjectile : public AActor
 {
@@ -15,17 +42,30 @@ public:
 	AMPFPSProjectile();
 	AMPFPSProjectile(const FObjectInitializer& ObjectInitializer);
 
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	void BeginPlay() override;
+	void BeginDestroy() override;
 	
-	// Called every frame
-	virtual void Tick( float DeltaSeconds ) override;
+	void Tick( float DeltaSeconds ) override;
+
+	void NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
 	void Throw(const FVector& Direction);
 
+	void Explode(const FVector& Location);
+
+	UFUNCTION(Reliable, NetMulticast)
+	void ExplosionEffect(const FVector& Location);
+	void ExplosionEffect_Implementation(const FVector& Location);
+
 	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
-	USphereComponent* CollisionComp;
+	USphereComponent* CollisionSphere;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
+	UMeshComponent* Mesh;
 	
 	UPROPERTY(EditDefaultsOnly, Category = Movement)
 	UProjectileMovementComponent* ProjectileMovement;
+
+	UPROPERTY(EditDefaultsOnly, Category = Config)
+	FProjectileConfig ProjectileConfig;
 };

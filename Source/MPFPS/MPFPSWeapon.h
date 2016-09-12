@@ -13,6 +13,9 @@ struct FWeaponConfig
 {
 	GENERATED_USTRUCT_BODY()
 
+	UPROPERTY(EditDefaultsOnly, Category = Config)
+	uint32	Damage;
+
 	UPROPERTY(EditDefaultsOnly, Category = Ammo)
 	uint32	ClipSize;
 
@@ -35,6 +38,9 @@ struct FWeaponConfig
 	float	Recoil;
 
 	UPROPERTY(EditDefaultsOnly, Category = Config)
+	bool	RapidFire;
+
+	UPROPERTY(EditDefaultsOnly, Category = Config)
 	TSubclassOf<class AMPFPSProjectile> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
@@ -42,6 +48,15 @@ struct FWeaponConfig
 
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
 	UAnimMontage *ShootingAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	UAnimMontage *EquipAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	UAnimMontage *UnequipAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	UAnimMontage *ReloadingAnim;
 
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
 	UParticleSystem *MuzzleFlash;
@@ -78,9 +93,19 @@ public:
 
 	/** Network Functions **/
 	UFUNCTION(Reliable, Server, WithValidation)
-	void Shoot(const FVector& ShootDirection);
-	void Shoot_Implementation(const FVector& ShootDirection);
-	bool Shoot_Validate(const FVector& ShootDirection);
+	void Shoot(const FVector& ShootStartLocation, const FVector& ShootDirection);
+	void Shoot_Implementation(const FVector& ShootStartLocation, const FVector& ShootDirection);
+	bool Shoot_Validate(const FVector& ShootStartLocation, const FVector& ShootDirection);
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void StartShooting();
+	void StartShooting_Implementation();
+	bool StartShooting_Validate() { return true; }
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void StopShooting();
+	void StopShooting_Implementation();
+	bool StopShooting_Validate() { return true; }
 
 	UFUNCTION(Reliable, NetMulticast )
 	void ShootEffect();
@@ -88,7 +113,7 @@ public:
 
 	bool CanShoot() const { return (Cooldown <= 0.f && Ammo > 0); }
 
-	const unsigned int GetAmmo() const { return Ammo; }
+	const int GetAmmo() const { return Ammo; }
 
 	// Main weapon config
 	UPROPERTY(EditDefaultsOnly, Category = Config)
@@ -101,8 +126,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mesh)
 	UStaticMeshComponent*	WeaponMesh;
 
-	UPROPERTY(Replicated)
-	unsigned int	Ammo;
+	UPROPERTY(Replicated, BlueprintReadOnly, Category=Ammo)
+	int				Ammo;
 
 	UPROPERTY(Replicated)
 	float			Cooldown;
@@ -117,4 +142,5 @@ protected:
 	void ProcessHit(const FHitResult& Impact, const FVector& Origin, const FVector& ShootDirection);
 
 	std::function<void(const FVector&, const FVector&)>	ShootFunc;
+	bool			RapidShooting;
 };

@@ -4,44 +4,34 @@
 #include "Net/UnrealNetwork.h"
 #include "Runtime/Engine/Classes/Animation/AnimInstance.h"
 #include "MPFPSWeapon.h"
+#include "MPFPSHUD.h"
+#include "MPFPSPlayerController.h"
 #include "MPFPSPlayer.h"
 
 
 // Sets default values
 AMPFPSPlayer::AMPFPSPlayer() : 
-	MainWeaponClass(nullptr)
-	, SecondaryWeaponClass(nullptr)
-	, EquippedWeapon(nullptr)
+	EquippedWeapon(nullptr)
 	, Health(0)
 	, CameraPitch(0)
+	, BloodEmitterTemplate(nullptr)
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
 
 AMPFPSPlayer::AMPFPSPlayer(const FObjectInitializer& ObjectInitializer) :
 	Super(ObjectInitializer)
-	, MainWeaponClass(nullptr)
-	, SecondaryWeaponClass(nullptr)
 	, EquippedWeapon(nullptr)
 	, Health(0)
-	, RespawnTimer(0.f)
+	, BloodEmitterTemplate(nullptr)
 {
-	static ConstructorHelpers::FClassFinder<AMPFPSWeapon> MainWeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/Weapons/BP_Weapon_Shotgun.BP_Weapon_Shotgun_C'"));
-	static ConstructorHelpers::FClassFinder<AMPFPSWeapon> SecondaryWeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/Weapons/BP_Weapon_MP443.BP_Weapon_MP443_C'"));
-
-	if (MainWeaponBlueprint.Succeeded())
-	{
-		MainWeaponClass = MainWeaponBlueprint.Class;
-	}
-	if (SecondaryWeaponBlueprint.Succeeded())
-	{
-		SecondaryWeaponClass = SecondaryWeaponBlueprint.Class;
-	}
-
 	FirstPersonCameraComponent = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetMesh(), TEXT("FPCameraSocket"));
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> BloodPS
+		(TEXT("ParticleSystem'/Game/Assets/VFX/P_body_bullet_impact'"));
+	BloodEmitterTemplate = BloodPS.Object;
 	bReplicates = true;
 }
 
@@ -59,55 +49,69 @@ void AMPFPSPlayer::SetPlayerDefaults()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
-	Inventory.MainWeapon = GetWorld()->SpawnActor<AMPFPSWeapon>(MainWeaponClass, SpawnParams);
-	Inventory.SecondaryWeapon = GetWorld()->SpawnActor<AMPFPSWeapon>(SecondaryWeaponClass, SpawnParams);
-	if (Inventory.MainWeapon)
+	AMPFPSPlayerController* controller = Cast<AMPFPSPlayerController>(GetController());
+	if (controller)
 	{
-		Inventory.MainWeapon->WeaponMesh->SetCastShadow(true);
-		Inventory.MainWeapon->WeaponMesh->SetOnlyOwnerSee(false);
+		if (!Inventory.MainWeapon)
+		{
+			Inventory.MainWeapon = GetWorld()->SpawnActor<AMPFPSWeapon>(controller->MainWeaponClass,
+				SpawnParams);
+		}
+		if (!Inventory.SecondaryWeapon)
+		{
+			Inventory.SecondaryWeapon = GetWorld()->SpawnActor<AMPFPSWeapon>(
+				controller->SecondaryWeaponClass,
+				SpawnParams);
+		}
+		if (Inventory.MainWeapon)
+		{
+			Inventory.MainWeapon->WeaponMesh->SetCastShadow(true);
+			Inventory.MainWeapon->WeaponMesh->SetOnlyOwnerSee(false);
+		}
+		if (Inventory.SecondaryWeapon)
+		{
+			Inventory.SecondaryWeapon->WeaponMesh->SetCastShadow(true);
+			Inventory.SecondaryWeapon->WeaponMesh->SetOnlyOwnerSee(false);
+		}
 
+		SwitchWeapon();
+		SetManequinColor(controller->CharacterColor);
+		OnRespawn();
 	}
-	if (Inventory.SecondaryWeapon)
+}
+
+void AMPFPSPlayer::OnDie_Implementation()
+{
+	AMPFPSPlayerController* controller = Cast<AMPFPSPlayerController>(GetController());
+	if (controller != nullptr)
 	{
-		Inventory.SecondaryWeapon->WeaponMesh->SetCastShadow(true);
-		Inventory.SecondaryWeapon->WeaponMesh->SetOnlyOwnerSee(false);
+		DisableInput(controller);
+		if (controller->GetHUD())
+		{
+			Cast<AMPFPSHUD>(controller->GetHUD())->SwitchToLeaderboard();
+		}
 	}
+}
 
-	EquipWeapon(Inventory.MainWeapon);
+void AMPFPSPlayer::OnRespawn_Implementation()
+{
+	AMPFPSPlayerController* controller = Cast<AMPFPSPlayerController>(GetController());
+	if (controller && controller->GetHUD())
+	{
+		Cast<AMPFPSHUD>(controller->GetHUD())->SwitchToHud();
+		EnableInput(controller);
+	}
 }
 
 // Called every frame
 void AMPFPSPlayer::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
-	//TODO: Must be more elegant way
-	if (Health <= 0)
-	{
-		if (InputEnabled())
-		{
-			DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-			RespawnTimer = 3.f;
-		}
-		else
-		{
-			if (GetWorld()->GetAuthGameMode())
-			{
-				RespawnTimer -= DeltaTime;
-				if (RespawnTimer <= 0.f)
-				{
-					GetWorld()->GetAuthGameMode()->RestartPlayer(GetController());
-				}
-			}
-				
-		}
-	}
-	else
-	{
-		if (!InputEnabled())
-			EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		// TODO: Some dragging can be noted on client. What's a deal  with Client Prediction in UE4?
-		SetPitch(FMath::ClampAngle(FMath::RInterpTo(FRotator(CameraPitch, 0, 0), GetControlRotation(), DeltaTime, 15).Pitch, -90, 90));
-	}
+
+	// TODO: Some dragging can be noted on client. What's a deal  with Client Prediction in UE4?
+	float pitch = FMath::ClampAngle(FMath::RInterpTo(FRotator(CameraPitch, 0, 0), GetControlRotation(), DeltaTime, 15).Pitch, -90, 90);
+	SetPitch(pitch);
+
 }
 
 // Called to bind functionality to input
@@ -121,7 +125,8 @@ void AMPFPSPlayer::SetupPlayerInputComponent(class UInputComponent* _InputCompon
 	_InputComponent->BindAxis("LookUp", this, &AMPFPSPlayer::AddControllerPitchInput);
 	_InputComponent->BindAction("Jump", IE_Pressed, this, &AMPFPSPlayer::StartJump);
 	_InputComponent->BindAction("Jump", IE_Released, this, &AMPFPSPlayer::EndJump);
-	_InputComponent->BindAction("Fire", IE_Pressed, this, &AMPFPSPlayer::Fire);
+	_InputComponent->BindAction("Fire", IE_Pressed, this, &AMPFPSPlayer::FireStart);
+	_InputComponent->BindAction("Fire", IE_Released, this, &AMPFPSPlayer::FireEnd);
 	_InputComponent->BindAction("NextWeapon", IE_Pressed, this, &AMPFPSPlayer::SwitchWeapon);
 	_InputComponent->BindAction("PrevWeapon", IE_Pressed, this, &AMPFPSPlayer::SwitchWeapon);
 	_InputComponent->BindAction("Crouch", IE_Pressed, this, &AMPFPSPlayer::StartCrouch);
@@ -130,11 +135,33 @@ void AMPFPSPlayer::SetupPlayerInputComponent(class UInputComponent* _InputCompon
 	_InputComponent->BindAction("Zoom", IE_Released, this, &AMPFPSPlayer::CameraZoomOut);
 	_InputComponent->BindAction("Sprint", IE_Pressed, this, &AMPFPSPlayer::SprintStart);
 	_InputComponent->BindAction("Sprint", IE_Released, this, &AMPFPSPlayer::SprintStop);
+	_InputComponent->BindAction("ShowScore", IE_Pressed, this, &AMPFPSPlayer::ShowScore);
+	_InputComponent->BindAction("ShowScore", IE_Released, this, &AMPFPSPlayer::HideScore);
 }
 
 float AMPFPSPlayer::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
 {
-	ApplyDamage(Damage);
+	if (Health > 0)
+	{
+		if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+		{
+			FPointDamageEvent* PointDamage = (FPointDamageEvent*)&DamageEvent;
+			SpawnBloodEffect(PointDamage->HitInfo.ImpactPoint, PointDamage->HitInfo.ImpactNormal.Rotation());
+		}
+		Health -= Damage;
+		if (Health <= 0)
+		{
+			AMPFPSPlayerController* controller = Cast<AMPFPSPlayerController>(GetController());
+			if (controller != nullptr)
+			{
+				UnequipWeapon();
+				OnDie();
+				controller->StartRespawnTimer();
+			}
+			if (EventInstigator && EventInstigator->PlayerState)
+				EventInstigator->PlayerState->Score++;
+		}
+	}
 	return Health;
 }
 
@@ -144,11 +171,13 @@ void AMPFPSPlayer::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutL
 	DOREPLIFETIME(AMPFPSPlayer, EquippedWeapon);
 	DOREPLIFETIME(AMPFPSPlayer, CameraPitch);
 	DOREPLIFETIME(AMPFPSPlayer, Health);
+	DOREPLIFETIME(AMPFPSPlayer, IsSprinting);
+	DOREPLIFETIME(AMPFPSPlayer, IsCrouching);
 }
 
 void AMPFPSPlayer::MoveForward(float Value)
 {
-	if (Controller != nullptr && Value != 0.0f && Health > 0)
+	if (Controller != nullptr && Value != 0.0f)
 	{
 		if (Value < 0.f)
 			SprintStop();
@@ -165,24 +194,13 @@ void AMPFPSPlayer::MoveForward(float Value)
 
 void AMPFPSPlayer::StrafeRight(float Value)
 {
-	if (Controller != nullptr && Value != 0.0f && Health > 0)
+	if (Controller != nullptr && Value != 0.0f)
 	{
 		SprintStop();
 		FRotator Rotation = Controller->GetControlRotation();
 		const FVector Direction = FRotationMatrix(Rotation).GetScaledAxis(EAxis::Y);
 		AddMovementInput(Direction, Value);
 	}
-}
-
-void AMPFPSPlayer::ApplyDamage_Implementation(float Damage)
-{
-	if (Health > 0)
-		Health -= Damage;
-}
-
-bool AMPFPSPlayer::ApplyDamage_Validate(float Damage)
-{
-	return true;
 }
 
 void AMPFPSPlayer::SwitchWeapon_Implementation()
@@ -237,33 +255,73 @@ void AMPFPSPlayer::CameraZoomOut()
 
 void AMPFPSPlayer::SprintStart()
 {
-	if (FVector::DotProduct(GetVelocity(), GetActorForwardVector()) > 0.5f)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed * 2;
-	}
+	SetSprinting(true);
 }
 
 void AMPFPSPlayer::SprintStop()
 {
-	GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed;
+	SetSprinting(false);
 }
 
-void AMPFPSPlayer::Fire()
+void AMPFPSPlayer::SetSprinting_Implementation(bool Val)
+{
+	if (Val)
+	{
+		if (FVector::DotProduct(GetVelocity(), GetActorForwardVector()) > 0.5f)
+		{
+			GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed * 2;
+		}
+	}
+	else
+		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed;
+
+	IsSprinting = Val;
+}
+
+void AMPFPSPlayer::FireStart()
 {
 	if (!EquippedWeapon || Health <= 0)
 		return;
 	
 	FVector CameraLocation;
 	FRotator CameraRotation;
+	FVector MuzzleLocation;
 	GetActorEyesViewPoint(CameraLocation, CameraRotation);
+	MuzzleLocation = CameraLocation + FTransform(CameraRotation).TransformVector(FVector(80.0f, 0.f, -5.f));
 	if (EquippedWeapon->CanShoot() && GetCharacterMovement()->MaxWalkSpeed <= DefaultMovementSpeed)
 	{
-		EquippedWeapon->Shoot(CameraRotation.Vector());
-		AddControllerPitchInput(-(EquippedWeapon->WeaponConfig.Recoil));
+		EquippedWeapon->StartShooting();
+		/*AddControllerPitchInput(-(EquippedWeapon->WeaponConfig.Recoil));
 		if (EquippedWeapon->WeaponConfig.ShootingAnim)
 		{
 			GetMesh()->GetAnimInstance()->Montage_Play(EquippedWeapon->WeaponConfig.ShootingAnim);
-		}
+		}*/
+	}
+}
+
+void AMPFPSPlayer::FireEnd()
+{
+	if (!EquippedWeapon)
+		return;
+
+	EquippedWeapon->StopShooting();
+}
+
+void AMPFPSPlayer::ShowScore()
+{
+	AMPFPSPlayerController* controller = Cast<AMPFPSPlayerController>(GetController());
+	if (controller != nullptr && controller->GetHUD())
+	{
+		Cast<AMPFPSHUD>(controller->GetHUD())->SwitchToLeaderboard();
+	}
+}
+
+void AMPFPSPlayer::HideScore()
+{
+	AMPFPSPlayerController* controller = Cast<AMPFPSPlayerController>(GetController());
+	if (controller != nullptr && controller->GetHUD())
+	{
+		Cast<AMPFPSHUD>(controller->GetHUD())->SwitchToHud();
 	}
 }
 
@@ -282,5 +340,29 @@ void AMPFPSPlayer::UnequipWeapon()
 	if (EquippedWeapon)
 	{
 		EquippedWeapon = nullptr;
+	}
+}
+
+void AMPFPSPlayer::SetManequinColor_Implementation(const FLinearColor& color)
+{
+	if (GetMesh())
+	{
+		for (auto i = 0; i < GetMesh()->GetNumMaterials(); ++i)
+		{
+			UMaterialInstanceDynamic* MatInstance = GetMesh()->CreateAndSetMaterialInstanceDynamic(i);
+			if (MatInstance)
+			{
+				MatInstance->SetVectorParameterValue(TEXT("BaseColor"), color);
+			}
+		}
+	}
+}
+
+void AMPFPSPlayer::SpawnBloodEffect_Implementation(const FVector& Position, const FRotator& Rotation)
+{
+	UParticleSystemComponent*	BloodComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BloodEmitterTemplate, FTransform(Rotation, Position));
+	if (BloodComponent)
+	{
+		BloodComponent->ActivateSystem();
 	}
 }

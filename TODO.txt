@@ -1,13 +1,8 @@
-Urgent:
-1. Player respawn after death
-2. Menu (Choose player color/Choose weapons)
-3. Scoreboard
-
 Important:
-1. Attach animations for weapons changing and reloading
-2. Weapon recoil
-3. Sprint, strafe, crouch
-4. Weapon contiguous shooting
-5. Characters hit zones and hit effects
-6. Projectile weapon and grenades
-7. Weapon zoom animated and aimed
+1. Respawn player in new place
+2. Attach animations for weapons changing and reloading
+3. Walking direction animations
+4. Characters hit zones and hit effects
+5. Weapon zoom animated and aimed
+6. Leaderboards sorting
+7. Lots of bugfixes

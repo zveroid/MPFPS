@@ -422,8 +422,10 @@
     <ClInclude Include="..\..\Source\MPFPS\MPFPSHUD.h" />
     <ClCompile Include="..\..\Source\MPFPS\MPFPSPlayer.cpp" />
     <ClInclude Include="..\..\Source\MPFPS\MPFPSPlayer.h" />
+    <ClCompile Include="..\..\Source\MPFPS\MPFPSPlayerController.cpp" />
     <ClCompile Include="..\..\Source\MPFPS\MPFPSProjectile.cpp" />
     <ClCompile Include="..\..\Source\MPFPS\MPFPSWeapon.cpp" />
+    <ClInclude Include="..\..\Source\MPFPS\MPFPSPlayerController.h" />
     <ClInclude Include="..\..\Source\MPFPS\MPFPSProjectile.h" />
     <ClInclude Include="..\..\Source\MPFPS\MPFPSWeapon.h" />
   </ItemGroup>

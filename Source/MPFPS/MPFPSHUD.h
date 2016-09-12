@@ -13,18 +13,20 @@ UCLASS()
 class MPFPS_API AMPFPSHUD : public AHUD
 {
 	GENERATED_BODY()
-	
+
+public:
+	void SwitchToInventory();
+	void SwitchToLeaderboard();
+	void SwitchToHud();
+
 	AMPFPSHUD(const FObjectInitializer& ObjectInitializer);
 
-	virtual void BeginPlay() override;
-	virtual void DrawHUD() override;
+	void BeginPlay() override;
+	void DrawHUD() override;
 
-	UPROPERTY()
-	UTextBlock* HealthTextBlock;
-
-	UPROPERTY()
-	UTextBlock* AmmoTextBlock;
-
+private:
 	class UClass * HudWidgetClass;
-	class UUserWidget * HudWidget;
+	class UClass * InventoryWidgetClass;
+	class UClass * LeaderboardWidgetClass;
+	class UUserWidget * CurrentWidget;
 };

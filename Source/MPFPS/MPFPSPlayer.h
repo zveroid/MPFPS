@@ -3,6 +3,8 @@
 #pragma once
 
 #include "GameFramework/Character.h"
+#include "GameFramework/PlayerController.h"
+#include "MPFPSHUD.h"
 #include "MPFPSPlayer.generated.h"
 
 class AMPFPSWeapon;
@@ -49,15 +51,15 @@ public:
 	void MoveForward(float Value);
 
 	/** Networking functions **/
-	UFUNCTION(Reliable, Server, WithValidation)
-	void ApplyDamage(float Damage);
-	void ApplyDamage_Implementation(float Damage);
-	bool ApplyDamage_Validate(float Damage);
-
 	UFUNCTION(Reliable, Server, WithValidation )
-	void SetIsCrouched(bool Val);
-	void SetIsCrouched_Implementation(bool Val) { bIsCrouched = Val; }
-	bool SetIsCrouched_Validate(bool Val) { return true; }
+	void SetIsCrouching(bool Val);
+	void SetIsCrouching_Implementation(bool Val) { IsCrouching = Val; }
+	bool SetIsCrouching_Validate(bool Val) { return true; }
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void SetSprinting(bool Val);
+	void SetSprinting_Implementation(bool Val);
+	bool SetSprinting_Validate(bool Val) { return true; }
 
 	UFUNCTION(Unreliable, Server, WithValidation)
 	void SetPitch(float Pitch);
@@ -69,50 +71,51 @@ public:
 	void SwitchWeapon_Implementation();
 	bool SwitchWeapon_Validate();
 
+	UFUNCTION(Reliable, Client)
+	void OnDie();
+	void OnDie_Implementation();
+
+	UFUNCTION(Reliable, Client)
+	void OnRespawn();
+	void OnRespawn_Implementation();
+
 	UFUNCTION(Reliable, NetMulticast)
 	void SetupWeaponMesh(AMPFPSWeapon* Weapon);
 	void SetupWeaponMesh_Implementation(AMPFPSWeapon* Weapon);
 
-	UFUNCTION()
+	UFUNCTION(Reliable, NetMulticast)
+	void SetManequinColor(const FLinearColor& color);
+	void SetManequinColor_Implementation(const FLinearColor& color);
+
+	UFUNCTION(Reliable, NetMulticast)
+	void SpawnBloodEffect(const FVector& Position, const FRotator& Rotation);
+	void SpawnBloodEffect_Implementation(const FVector& Position, const FRotator& Rotation);
+
 	void StrafeRight(float Value);
 
-	UFUNCTION()
 	void StartJump() { bPressedJump = true; }
-
-	UFUNCTION()
 	void EndJump() { bPressedJump = false; }
 
-	UFUNCTION()
-	void StartCrouch() { SetIsCrouched(true); }
+	void StartCrouch() { SetIsCrouching(true); }
+	void EndCrouch() { SetIsCrouching(false); }
 
-	UFUNCTION()
-	void EndCrouch() { SetIsCrouched(false); }
-
-	UFUNCTION()
 	void CameraZoomIn();
-
-	UFUNCTION()
 	void CameraZoomOut();
 
-	UFUNCTION()
 	void SprintStart();
-
-	UFUNCTION()
 	void SprintStop();
 
-	UFUNCTION()
-	void Fire();
+	void FireStart();
+	void FireEnd();
+
+	void ShowScore();
+	void HideScore();
 
 	const AMPFPSWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
 	/* FPS Camera component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	UCameraComponent* FirstPersonCameraComponent;
-
-	UPROPERTY(VisibleAnywhere, Category = Weapon)
-	TSubclassOf<class AMPFPSWeapon>	MainWeaponClass;
-	UPROPERTY(VisibleAnywhere, Category = Weapon)
-	TSubclassOf<class AMPFPSWeapon>	SecondaryWeaponClass;
 
 	UPROPERTY(VisibleAnywhere, Category = Inventory)
 	FPlayerInventory	Inventory;
@@ -123,19 +126,24 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	int		Health;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
+	bool	IsSprinting;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
+	bool	IsCrouching;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float	DefaultMovementSpeed;
 
 	UPROPERTY(EditAnywhere)
 	int32	MaxHealth;
 
-protected:
-	UPROPERTY(VisibleAnywhere, Category = Weapon, replicated )
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, replicated )
 	AMPFPSWeapon*		EquippedWeapon;
 
 private:
 	void EquipWeapon(AMPFPSWeapon* Weapon);
 	void UnequipWeapon();
 
-	float	RespawnTimer;
+	UParticleSystem*	BloodEmitterTemplate;
 };

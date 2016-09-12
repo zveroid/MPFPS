@@ -2,6 +2,8 @@
 
 #include "MPFPS.h"
 #include "MPFPSHUD.h"
+#include "MPFPSPlayerController.h"
+#include "MPFPSPlayer.h"
 #include "MPFPSGameMode.h"
 
 
@@ -14,12 +16,15 @@ AMPFPSGameMode::AMPFPSGameMode(const FObjectInitializer& ObjectInitializer) :
 		DefaultPawnClass = PlayerPawnObject.Class;
 	}
 
+	PlayerControllerClass = AMPFPSPlayerController::StaticClass();
 	HUDClass = AMPFPSHUD::StaticClass();
+
+	MinRespawnDelay = 5.f;
+	bStartPlayersAsSpectators = true;
 }
 
 void AMPFPSGameMode::StartPlay()
 {
 	Super::StartPlay();
-	
 	StartMatch();
 }
