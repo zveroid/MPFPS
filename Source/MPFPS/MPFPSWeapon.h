@@ -4,6 +4,7 @@
 
 #include <functional>
 #include "GameFramework/Actor.h"
+#include "Runtime/Engine/Classes/Animation/AnimNotifies/AnimNotify.h"
 #include "MPFPSWeapon.generated.h"
 
 #define WEAPON_TRACE_CHANNEL ECC_GameTraceChannel1
@@ -22,6 +23,7 @@ struct FWeaponConfig
 	UPROPERTY(EditDefaultsOnly, Category = Config)
 	float	Cooldown;
 
+	/** If set to zero, reloading time set according to ReloadingAnim animation lenght */
 	UPROPERTY(EditDefaultsOnly, Category = Config)
 	float	ReloadingTime;
 
@@ -77,7 +79,7 @@ UCLASS()
 class MPFPS_API AMPFPSWeapon : public AActor
 {
 	GENERATED_BODY()
-	
+
 public:	
 	// Sets default values for this actor's properties
 	AMPFPSWeapon();
@@ -107,9 +109,20 @@ public:
 	void StopShooting_Implementation();
 	bool StopShooting_Validate() { return true; }
 
+	UFUNCTION(Reliable, Server, WithValidation)
+	void Reload();
+	void Reload_Implementation();
+	bool Reload_Validate() { return true; }
+
+	void FinishReloading();
+
 	UFUNCTION(Reliable, NetMulticast )
 	void ShootEffect();
 	void ShootEffect_Implementation();
+
+	UFUNCTION(Reliable, NetMulticast)
+	void SimulateReloading();
+	void SimulateReloading_Implementation();
 
 	bool CanShoot() const { return (Cooldown <= 0.f && Ammo > 0); }
 

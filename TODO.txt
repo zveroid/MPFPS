@@ -1,6 +1,6 @@
 Important:
 1. Respawn player in new place
-2. Attach animations for weapons changing and reloading
+2. Weapon change animations
 3. Walking direction animations
 4. Characters hit zones and hit effects
 5. Weapon zoom animated and aimed

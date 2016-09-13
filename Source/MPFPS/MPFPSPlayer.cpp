@@ -25,6 +25,8 @@ AMPFPSPlayer::AMPFPSPlayer(const FObjectInitializer& ObjectInitializer) :
 	, Health(0)
 	, BloodEmitterTemplate(nullptr)
 {
+	bReplicates = true;
+
 	FirstPersonCameraComponent = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetMesh(), TEXT("FPCameraSocket"));
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
@@ -32,7 +34,6 @@ AMPFPSPlayer::AMPFPSPlayer(const FObjectInitializer& ObjectInitializer) :
 	static ConstructorHelpers::FObjectFinder<UParticleSystem> BloodPS
 		(TEXT("ParticleSystem'/Game/Assets/VFX/P_body_bullet_impact'"));
 	BloodEmitterTemplate = BloodPS.Object;
-	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -291,11 +292,6 @@ void AMPFPSPlayer::FireStart()
 	if (EquippedWeapon->CanShoot() && GetCharacterMovement()->MaxWalkSpeed <= DefaultMovementSpeed)
 	{
 		EquippedWeapon->StartShooting();
-		/*AddControllerPitchInput(-(EquippedWeapon->WeaponConfig.Recoil));
-		if (EquippedWeapon->WeaponConfig.ShootingAnim)
-		{
-			GetMesh()->GetAnimInstance()->Montage_Play(EquippedWeapon->WeaponConfig.ShootingAnim);
-		}*/
 	}
 }
 
@@ -364,5 +360,13 @@ void AMPFPSPlayer::SpawnBloodEffect_Implementation(const FVector& Position, cons
 	if (BloodComponent)
 	{
 		BloodComponent->ActivateSystem();
+	}
+}
+
+void AMPFPSPlayer::OnReloadMontageEnd(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (EquippedWeapon && !bInterrupted)
+	{
+		EquippedWeapon->FinishReloading();
 	}
 }

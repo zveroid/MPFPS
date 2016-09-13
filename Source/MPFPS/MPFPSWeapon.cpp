@@ -3,6 +3,7 @@
 #include "MPFPS.h"
 #include "Net/UnrealNetwork.h"
 #include "Runtime/Engine/Classes/Animation/AnimInstance.h"
+#include "Runtime/Engine/Classes/Animation/AnimMontage.h"
 #include "MPFPSProjectile.h"
 #include "MPFPSPlayer.h"
 #include "MPFPSWeapon.h"
@@ -131,7 +132,7 @@ void AMPFPSWeapon::Shoot_Implementation(const FVector& ShootStartLocation, const
 				if (Ammo == 0)
 				{
 					StopShooting();
-					Reloading = WeaponConfig.ReloadingTime;
+					Reload();
 				}
 				Cooldown = WeaponConfig.Cooldown;
 			}
@@ -142,6 +143,17 @@ void AMPFPSWeapon::Shoot_Implementation(const FVector& ShootStartLocation, const
 bool AMPFPSWeapon::Shoot_Validate(const FVector& ShootStartLocation, const FVector & ShootDirection)
 {
 	return true;
+}
+
+void AMPFPSWeapon::StartShooting_Implementation()
+{
+	RapidShooting = WeaponConfig.RapidFire;
+	Shoot(FVector(), FVector());
+}
+
+void AMPFPSWeapon::StopShooting_Implementation()
+{
+	RapidShooting = false;
 }
 
 void AMPFPSWeapon::ShootEffect_Implementation()
@@ -162,15 +174,37 @@ void AMPFPSWeapon::ShootEffect_Implementation()
 	}
 }
 
-void AMPFPSWeapon::StartShooting_Implementation()
+void AMPFPSWeapon::Reload_Implementation()
 {
-	RapidShooting = WeaponConfig.RapidFire;
-	Shoot(FVector(), FVector());
+	SimulateReloading();
 }
 
-void AMPFPSWeapon::StopShooting_Implementation()
+void AMPFPSWeapon::SimulateReloading_Implementation()
 {
-	RapidShooting = false;
+	if (WeaponConfig.ReloadingAnim)
+	{
+		auto owner = Cast<AMPFPSPlayer>(Instigator);
+		if (owner)
+		{
+			const float AnimLenght = WeaponConfig.ReloadingAnim->GetPlayLength();
+			const float FrameRateMultiplier = WeaponConfig.ReloadingTime == 0.f ? 1.0 :
+				(AnimLenght == 0.f ? 0.f : WeaponConfig.ReloadingTime / AnimLenght);
+			owner->GetMesh()->GetAnimInstance()->Montage_Play(WeaponConfig.ReloadingAnim, FrameRateMultiplier);
+			FOnMontageEnded		MontageEndDelegate;
+			MontageEndDelegate.BindUObject(owner, &AMPFPSPlayer::OnReloadMontageEnd);
+			owner->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndDelegate, WeaponConfig.ReloadingAnim);
+		}
+	}
+	else
+	{
+		Reloading = WeaponConfig.ReloadingTime;
+	}
+}
+
+void AMPFPSWeapon::FinishReloading()
+{
+	Ammo = WeaponConfig.ClipSize;
+	Reloading = 0.f;
 }
 
 void AMPFPSWeapon::InstantShoot(const FVector& ShootStartLocation, const FVector& ShootDirection)

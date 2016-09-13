@@ -4,6 +4,7 @@
 
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
+#include "Runtime/Engine/Classes/Animation/AnimMontage.h"
 #include "MPFPSHUD.h"
 #include "MPFPSPlayer.generated.h"
 
@@ -46,8 +47,6 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
 
-	//UFUNCTION(Reliable, Server, WithValidation)
-	UFUNCTION()
 	void MoveForward(float Value);
 
 	/** Networking functions **/
@@ -112,6 +111,8 @@ public:
 	void HideScore();
 
 	const AMPFPSWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+
+	void OnReloadMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 
 	/* FPS Camera component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
